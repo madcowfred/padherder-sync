@@ -1,0 +1,5 @@
+0.1.1
+-----
+* Tried (and failed) to fix a horrible annoying Windows-specific OpenSSL certificate error.
+  Apparently my perfectly valid SSL certificate is invalid.
+* Fixed the USAGE text not saying 'padherder_sync.exe' when using the py2exe binary.
