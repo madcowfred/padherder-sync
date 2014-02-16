@@ -7,7 +7,7 @@ though.
 """
 
 __author__ = 'Freddie (freddie@padherder.com)'
-__version__ = '0.1'
+__version__ = '0.1.1'
 
 import cPickle
 import json
@@ -79,6 +79,23 @@ session.mount('https://', requests.adapters.HTTPAdapter(pool_connections=1, pool
 
 # ---------------------------------------------------------------------------
 
+def we_are_frozen():
+    """Returns whether we are frozen via py2exe.
+    This will affect how we find out where we are located."""
+
+    return hasattr(sys, "frozen")
+
+def module_path():
+    """ This will get us the program's directory,
+    even if we are frozen using py2exe"""
+
+    if we_are_frozen():
+        return os.path.dirname(unicode(sys.executable, sys.getfilesystemencoding()))
+
+    return os.path.dirname(unicode(__file__, sys.getfilesystemencoding()))
+
+# ---------------------------------------------------------------------------
+
 def xp_at_level(xp_curve, level):
     curve = XP_TABLES.get(xp_curve)
     if level > len(curve) - 1:
@@ -89,7 +106,7 @@ def xp_at_level(xp_curve, level):
 def main():
     # Check for monster cache (8 hours)
     cache_old = time.time() - (8 * 60 * 60)
-    pickle_path = os.path.join(os.path.dirname(__file__), 'monster_data.pickle')
+    pickle_path = os.path.join(module_path(), 'monster_data.pickle')
     if os.path.exists(pickle_path) and os.stat(pickle_path).st_mtime > cache_old:
         # Use cached data
         print 'Using cached monster data.'
@@ -252,7 +269,10 @@ def main():
 
 if __name__ == '__main__':
     if len(sys.argv) != 4:
-        print 'USAGE: padherder_sync.py [capture file] [API username] [API password]'
+        if we_are_frozen():
+            print 'USAGE: padherder_sync.exe [capture file] [PADherder username] [PADherder password]'
+        else:
+            print 'USAGE: padherder_sync.py [capture file] [PADherder username] [PADherder password]'
         sys.exit(1)
 
     session.auth = (sys.argv[2], sys.argv[3])
