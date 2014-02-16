@@ -21,13 +21,19 @@ from urlparse import urljoin
 # ---------------------------------------------------------------------------
 # Don't change anything below here unless you know what you're doing
 #API_ENDPOINT = 'http://192.168.1.254:8001/user-api'
-API_ENDPOINT = 'https://www.padherder.com/user-api'
+
+# temporary workaround until I can work out what in the hell is going on with the OpenSSL error
+if os.name == 'nt':
+    API_ENDPOINT = 'http://www.padherder.com/user-api'
+    URL_MONSTER_DATA = 'http://www.padherder.com/api/monsters/'
+else:
+    API_ENDPOINT = 'https://www.padherder.com/user-api'
+    URL_MONSTER_DATA = 'https://www.padherder.com/api/monsters/'
 
 URL_USER_DETAILS = '%s/user/%%s/' % (API_ENDPOINT)
 URL_MONSTER_CREATE = '%s/monster/' % (API_ENDPOINT)
 
-URL_MONSTER_DATA = 'https://www.padherder.com/api/monsters/'
-
+# Remap US monster IDs to PADherder/Wiki IDs
 ID_REMAP = {
     669: 924,
     670: 925,
@@ -67,15 +73,8 @@ XP_TABLES = {
 # Request headers
 headers = {
     'accept': 'application/json',
-    'user-agent': 'PADherder Sync %s' % (__version__),
+    'user-agent': 'padherder-sync %s' % (__version__),
 }
-
-# Requests session so we get HTTP Keep-Alive
-session = requests.Session()
-session.headers = headers
-# Limit each session to a single concurrent connection
-session.mount('http://', requests.adapters.HTTPAdapter(pool_connections=1, pool_maxsize=1))
-session.mount('https://', requests.adapters.HTTPAdapter(pool_connections=1, pool_maxsize=1))
 
 # ---------------------------------------------------------------------------
 
@@ -104,6 +103,14 @@ def xp_at_level(xp_curve, level):
         return curve[level - 1]
 
 def main():
+    # Requests session so we get HTTP Keep-Alive
+    session = requests.Session()
+    session.auth = (sys.argv[2], sys.argv[3])
+    session.headers = headers
+    # Limit the session to a single concurrent connection
+    session.mount('http://', requests.adapters.HTTPAdapter(pool_connections=1, pool_maxsize=1))
+    session.mount('https://', requests.adapters.HTTPAdapter(pool_connections=1, pool_maxsize=1))
+
     # Check for monster cache (8 hours)
     cache_old = time.time() - (8 * 60 * 60)
     pickle_path = os.path.join(module_path(), 'monster_data.pickle')
@@ -274,7 +281,5 @@ if __name__ == '__main__':
         else:
             print 'USAGE: padherder_sync.py [capture file] [PADherder username] [PADherder password]'
         sys.exit(1)
-
-    session.auth = (sys.argv[2], sys.argv[3])
 
     main()
