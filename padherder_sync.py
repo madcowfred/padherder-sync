@@ -157,9 +157,22 @@ def main():
         material_map[material['monster']] = material
 
     # Build a map of monsterID:monsters, (+id, -current_xp, -current_skill, -current_awakening, -plus_hp ,-plus_atk, -plus_rcv) order
+    # Also build a map of padherder monster id:monster
     monster_map = {}
+    current_herd_map = {}
     for monster in user_data['monsters']:
         monster_map.setdefault(monster['monster'], []).append(monster)
+        current_herd_map[monster['id']] = monster
+
+
+    # Build a map of monsterID:teams
+    team_map = {}
+    for team in user_data['teams']:
+        team_map.setdefault(team['leader'], []).append(team)
+        team_map.setdefault(team['sub1'], []).append(team)
+        team_map.setdefault(team['sub2'], []).append(team)
+        team_map.setdefault(team['sub3'], []).append(team)
+        team_map.setdefault(team['sub4'], []).append(team)
 
     # Load the captured data
     data = json.loads(open(sys.argv[1], 'rb').read())
@@ -191,6 +204,7 @@ def main():
 
     # Iterate over the cards doing stuff
     material_counts = {}
+    found_monsters = {}
     for card in data['card']:
         monster_id = card['no']
 
@@ -209,6 +223,9 @@ def main():
             if card['exp'] >= monster['current_xp'] or card['slv'] >= monster['current_skill'] or card['plus'][0] >= monster['plus_hp'] or \
                 card['plus'][1] >= monster['plus_atk'] or card['plus'][2] >= monster['plus_rcv'] or card['plus'][3] >= monster['current_awakening']:
 
+                # Keep track of found monsters so we can figure out what to remove later on
+                found_monsters[monster['id']] = monster
+                
                 monsters.pop(i)
                 found = True
                 data = {}
@@ -272,6 +289,32 @@ def main():
                 print 'Updated material %r from %d to %d' % (monster_data[monster_id]['name'], material['count'], new_count)
             else:
                 print 'Failed updating material %r: %s %s' % (monster_data[monster_id]['name'], r.status_code, r.content)
+
+    # Find the monsters the user no longer possesses and remove them if it is safe to do so
+    set_found = set(found_monsters.keys())
+    set_current = set(current_herd_map.keys())  
+    intersect = set_found.intersection(set_current)
+
+    # Figure out what is missing
+    set_remove = set_current - intersect
+
+    for remove_monster_id in set_remove:
+        # Hydrate the monster
+        remove_monster = current_herd_map[remove_monster_id]
+        
+        # Lookup the teams (if any) for this monster
+        teams = team_map.get(remove_monster_id)
+
+        # Only remove monsters that are not currently on a team (safe delete)
+        if teams is not None:
+            print 'Not removing monster %r because it is currently on %d team(s)' % (remove_monster['id'], len(teams))
+        else:
+            r = session.delete(remove_monster['url'])
+            
+            if r.status_code == 204:
+                print 'Removed monster %r' % remove_monster['id']
+            else:
+                print 'Failed to remove monster %r' % remove_monster['id']
 
 
 if __name__ == '__main__':
