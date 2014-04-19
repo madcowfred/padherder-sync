@@ -1,3 +1,9 @@
+0.1.2
+-----
+* Added logic for removing monsters the user no longer possesses, as long as they are not
+  members of any teams (thanks Bill Krueger).
+* Probably fixed the HTTPS bug accidentally while making a fresh certificate post-Heartbleed.
+
 0.1.1
 -----
 * Tried (and failed) to fix a horrible annoying Windows-specific OpenSSL certificate error.
