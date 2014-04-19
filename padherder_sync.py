@@ -7,7 +7,7 @@ though.
 """
 
 __author__ = 'Freddie (freddie@padherder.com)'
-__version__ = '0.1.1'
+__version__ = '0.1.2'
 
 import cPickle
 import json
@@ -23,12 +23,8 @@ from urlparse import urljoin
 #API_ENDPOINT = 'http://192.168.1.254:8001/user-api'
 
 # temporary workaround until I can work out what in the hell is going on with the OpenSSL error
-if os.name == 'nt':
-    API_ENDPOINT = 'http://www.padherder.com/user-api'
-    URL_MONSTER_DATA = 'http://www.padherder.com/api/monsters/'
-else:
-    API_ENDPOINT = 'https://www.padherder.com/user-api'
-    URL_MONSTER_DATA = 'https://www.padherder.com/api/monsters/'
+API_ENDPOINT = 'https://www.padherder.com/user-api'
+URL_MONSTER_DATA = 'https://www.padherder.com/api/monsters/'
 
 URL_USER_DETAILS = '%s/user/%%s/' % (API_ENDPOINT)
 URL_MONSTER_CREATE = '%s/monster/' % (API_ENDPOINT)
@@ -225,7 +221,7 @@ def main():
 
                 # Keep track of found monsters so we can figure out what to remove later on
                 found_monsters[monster['id']] = monster
-                
+
                 monsters.pop(i)
                 found = True
                 data = {}
@@ -292,7 +288,7 @@ def main():
 
     # Find the monsters the user no longer possesses and remove them if it is safe to do so
     set_found = set(found_monsters.keys())
-    set_current = set(current_herd_map.keys())  
+    set_current = set(current_herd_map.keys())
     intersect = set_found.intersection(set_current)
 
     # Figure out what is missing
@@ -301,7 +297,7 @@ def main():
     for remove_monster_id in set_remove:
         # Hydrate the monster
         remove_monster = current_herd_map[remove_monster_id]
-        
+
         # Lookup the teams (if any) for this monster
         teams = team_map.get(remove_monster_id)
 
@@ -310,7 +306,7 @@ def main():
             print 'Not removing monster %r because it is currently on %d team(s)' % (remove_monster['id'], len(teams))
         else:
             r = session.delete(remove_monster['url'])
-            
+
             if r.status_code == 204:
                 print 'Removed monster %r' % remove_monster['id']
             else:
