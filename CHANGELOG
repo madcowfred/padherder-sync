@@ -1,3 +1,7 @@
+0.1.3
+-----
+* Include my cacert.pem so HTTPS actually works.
+
 0.1.2
 -----
 * Added logic for removing monsters the user no longer possesses, as long as they are not
