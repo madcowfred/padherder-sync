@@ -7,7 +7,7 @@ though.
 """
 
 __author__ = 'Freddie (freddie@padherder.com)'
-__version__ = '0.1.2'
+__version__ = '0.1.3'
 
 import cPickle
 import json
@@ -102,6 +102,7 @@ def main():
     # Requests session so we get HTTP Keep-Alive
     session = requests.Session()
     session.auth = (sys.argv[2], sys.argv[3])
+    session.verify = 'cacert.pem'
     session.headers = headers
     # Limit the session to a single concurrent connection
     session.mount('http://', requests.adapters.HTTPAdapter(pool_connections=1, pool_maxsize=1))
